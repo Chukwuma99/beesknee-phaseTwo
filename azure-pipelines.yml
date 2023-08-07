@@ -64,22 +64,22 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: 'az deployment group create --resource-group BeesKneeGroup --template-file ./main.bicep --parameters dnsNameLabel=beeskneeco imageName=$(imageName):$(Build.BuildId)'
 
-- stage: DeployToEastProduction
-  dependsOn: DeployToProduction
-  jobs:
-  - deployment: Deploy
-    displayName: Deploy to East Production
-    pool:
-      vmImage: 'ubuntu-latest'
-    environment: 'east-production'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - checkout: self
-          - task: AzureCLI@2
-            inputs:
-              azureSubscription: $(azureSubscription)
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: 'az deployment group create --resource-group BeesKneeGroup --template-file ./main-east.bicep --parameters dnsNameLabel=beeskneeco-east imageName=$(imageName):$(Build.BuildId)'
+# - stage: DeployToEastProduction
+#   dependsOn: DeployToProduction
+#   jobs:
+#   - deployment: Deploy
+#     displayName: Deploy to East Production
+#     pool:
+#       vmImage: 'ubuntu-latest'
+#     environment: 'east-production'
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#           - checkout: self
+#           - task: AzureCLI@2
+#             inputs:
+#               azureSubscription: $(azureSubscription)
+#               scriptType: 'bash'
+#               scriptLocation: 'inlineScript'
+#               inlineScript: 'az deployment group create --resource-group BeesKneeGroup --template-file ./main-east.bicep --parameters dnsNameLabel=beeskneeco-east imageName=$(imageName):$(Build.BuildId)'
