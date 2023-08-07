@@ -1,0 +1,85 @@
+trigger:
+- main
+
+variables:
+  azureSubscription: 'beeknees-website-service'
+  dockerRegistryServiceConnection: 'DockerHub'  
+  imageName: 'chumaigwe9/bees-knee-website'
+
+stages:
+- stage: BuildAndPushImage
+  jobs:
+  - job: Build
+    displayName: Build Docker Image
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+      - checkout: self
+      - task: Docker@2
+        inputs:
+          containerRegistry: $(dockerRegistryServiceConnection)
+          repository: $(imageName)
+          command: 'buildAndPush'
+          Dockerfile: '**/Dockerfile'
+          tags: |
+            $(Build.BuildId)
+
+- stage: DeployToTesting
+  dependsOn: BuildAndPushImage
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy to Testing
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: 'testing'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: 'az deployment group create --resource-group BeesKneeGroup --template-file ./test.bicep --parameters dnsNameLabel=beeskneeco-testing imageName=$(imageName):$(Build.BuildId)'
+
+- stage: DeployToProduction
+  dependsOn: DeployToTesting
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy to Production
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: 'az deployment group create --resource-group BeesKneeGroup --template-file ./main.bicep --parameters dnsNameLabel=beeskneeco imageName=$(imageName):$(Build.BuildId)'
+
+- stage: DeployToEastProduction
+  dependsOn: DeployToProduction
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy to East Production
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: 'east-production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: 'az deployment group create --resource-group BeesKneeGroup --template-file ./main-east.bicep --parameters dnsNameLabel=beeskneeco-east imageName=$(imageName):$(Build.BuildId)'
