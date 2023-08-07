@@ -3,7 +3,7 @@ trigger:
 
 variables:
   azureSubscription: 'beeknees-website-service'
-  dockerRegistryServiceConnection: 'DockerHub'  
+  dockerRegistryServiceConnection: 'DockerHubConnection'  
   imageName: 'chumaigwe9/bees-knee-website-cicd'
 
 stages:
